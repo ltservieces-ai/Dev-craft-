@@ -69,6 +69,9 @@ fun WorkspaceScreen(
     onOpenGitHub: () -> Unit,
     onOpenCloudSync: () -> Unit,
     onOpenPreferences: () -> Unit,
+    onOpenVisualDesigner: () -> Unit = {},
+    onOpenAiAssistant: () -> Unit = {},
+    onOpenSketchware: () -> Unit = {},
     onCloseProject: () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -188,6 +191,26 @@ fun WorkspaceScreen(
                         )
                     }
 
+                    // Visual App Builder quick icon (Beta drag-drop mode)
+                    IconButton(onClick = onOpenVisualDesigner) {
+                        Icon(
+                            imageVector = Icons.Default.Palette,
+                            contentDescription = "Visual Designer (Drag & Drop Beta)",
+                            tint = IdeAccentGreen,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    // AI Copilot quick icon
+                    IconButton(onClick = onOpenAiAssistant) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = "AI Copilot & Code Engine",
+                            tint = IdeAccentPeach,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
                     // Overflow Menu
                     Box {
                         IconButton(onClick = { showOverflowMenu = true }) {
@@ -202,6 +225,31 @@ fun WorkspaceScreen(
                             onDismissRequest = { showOverflowMenu = false },
                             modifier = Modifier.background(IdeDarkSurfaceVariant)
                         ) {
+                            DropdownMenuItem(
+                                text = { Text("Visual App Builder (Beta Drag-Drop)", color = IdeAccentGreen) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onOpenVisualDesigner()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null, tint = IdeAccentGreen) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("AI Copilot & Code Assistant", color = IdeAccentPeach) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onOpenAiAssistant()
+                                },
+                                leadingIcon = { Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = IdeAccentPeach) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sketchware Pro Configuration", color = IdeTextPrimary) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onOpenSketchware()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Dashboard, contentDescription = null, tint = IdeAccentPeach) }
+                            )
+                            HorizontalDivider(color = IdeDarkOutline)
                             DropdownMenuItem(
                                 text = { Text("Direct Install APK", color = IdeAccentGreen) },
                                 onClick = {

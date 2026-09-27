@@ -26,5 +26,7 @@ data class ProjectEntity(
     val locationPermission: Boolean = false,
     val microphonePermission: Boolean = false,
     val cameraPermission: Boolean = false,
-    val internetPermission: Boolean = true
+    val internetPermission: Boolean = true,
+    val customLogoUri: String = "",
+    val iosTarget: String = "iOS 18.0"
 )

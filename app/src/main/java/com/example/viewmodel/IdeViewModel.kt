@@ -35,6 +35,7 @@ sealed class Screen {
     object ProjectConfig : Screen()
     object Workspace : Screen()
     object SupportDeveloper : Screen()
+    object VisualDesigner : Screen()
 }
 
 enum class BottomTab {
@@ -122,6 +123,12 @@ class IdeViewModel(application: Application) : AndroidViewModel(application) {
     private val _showPreferencesDialog = MutableStateFlow(false)
     val showPreferencesDialog: StateFlow<Boolean> = _showPreferencesDialog.asStateFlow()
 
+    private val _showAiDialog = MutableStateFlow(false)
+    val showAiDialog: StateFlow<Boolean> = _showAiDialog.asStateFlow()
+
+    private val _showSketchwareDialog = MutableStateFlow(false)
+    val showSketchwareDialog: StateFlow<Boolean> = _showSketchwareDialog.asStateFlow()
+
     // Project Creation wizard state
     private val _selectedTemplate = MutableStateFlow("Empty Activity")
     val selectedTemplate: StateFlow<String> = _selectedTemplate.asStateFlow()
@@ -138,8 +145,11 @@ class IdeViewModel(application: Application) : AndroidViewModel(application) {
     private val _configLanguage = MutableStateFlow("Kotlin")
     val configLanguage: StateFlow<String> = _configLanguage.asStateFlow()
 
-    private val _configMinSdk = MutableStateFlow("API 24: Android 7.0 (Nougat)")
+    private val _configMinSdk = MutableStateFlow("API 36: Android 16 (Baklava - Latest)")
     val configMinSdk: StateFlow<String> = _configMinSdk.asStateFlow()
+
+    private val _configIosTarget = MutableStateFlow("iOS 18.0 (Latest)")
+    val configIosTarget: StateFlow<String> = _configIosTarget.asStateFlow()
 
     private val _configUseKts = MutableStateFlow(true)
     val configUseKts: StateFlow<Boolean> = _configUseKts.asStateFlow()
@@ -337,6 +347,10 @@ ${project.location}/${project.name} $
         _configMinSdk.value = sdk
     }
 
+    fun setConfigIosTarget(target: String) {
+        _configIosTarget.value = target
+    }
+
     fun setConfigUseKts(useKts: Boolean) {
         _configUseKts.value = useKts
     }
@@ -364,7 +378,8 @@ ${project.location}/${project.name} $
                 language = _configLanguage.value,
                 minSdk = _configMinSdk.value,
                 useKts = _configUseKts.value,
-                template = _selectedTemplate.value
+                template = _selectedTemplate.value,
+                iosTarget = _configIosTarget.value
             )
             val newProj = repository.getProjectDirect(id)
             if (newProj != null) {
@@ -644,13 +659,24 @@ BUILD SUCCESSFUL in 1s
     }
 
     // App Logo
-    fun updateAppLogo(colorHex: String, symbol: String) {
+    fun updateAppLogo(colorHex: String, symbol: String, customLogoUri: String = "") {
         val proj = _activeProject.value ?: return
         viewModelScope.launch {
-            repository.updateAppIcon(proj.id, colorHex, symbol)
+            repository.updateAppIcon(proj.id, colorHex, symbol, customLogoUri)
             _activeProject.value = repository.getProjectDirect(proj.id)
             _showAppLogoDialog.value = false
             _userMessage.value = "App logo updated successfully!"
+        }
+    }
+
+    fun deleteProject(projectId: Long) {
+        viewModelScope.launch {
+            repository.deleteProject(projectId)
+            if (_activeProject.value?.id == projectId) {
+                _activeProject.value = null
+                _currentScreen.value = Screen.Welcome
+            }
+            _userMessage.value = "Project deleted."
         }
     }
 
@@ -687,6 +713,8 @@ BUILD SUCCESSFUL in 1s
     fun setShowGitHubDialog(show: Boolean) { _showGitHubDialog.value = show }
     fun setShowCloudSyncDialog(show: Boolean) { _showCloudSyncDialog.value = show }
     fun setShowPreferencesDialog(show: Boolean) { _showPreferencesDialog.value = show }
+    fun setShowAiDialog(show: Boolean) { _showAiDialog.value = show }
+    fun setShowSketchwareDialog(show: Boolean) { _showSketchwareDialog.value = show }
     fun toggleBottomSheet() { _isBottomSheetExpanded.value = !_isBottomSheetExpanded.value }
     fun setBottomSheetExpanded(expanded: Boolean) { _isBottomSheetExpanded.value = expanded }
     fun setActiveBottomTab(tab: BottomTab) { _activeBottomTab.value = tab }

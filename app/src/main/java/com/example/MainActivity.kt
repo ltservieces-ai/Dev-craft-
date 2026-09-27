@@ -23,6 +23,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.dialogs.*
 import com.example.ui.screens.*
+import com.example.ui.components.*
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.IdeViewModel
 import com.example.viewmodel.Screen
@@ -66,12 +67,15 @@ class MainActivity : ComponentActivity() {
             val showGitHubDialog by viewModel.showGitHubDialog.collectAsStateWithLifecycle()
             val showCloudSyncDialog by viewModel.showCloudSyncDialog.collectAsStateWithLifecycle()
             val showPreferencesDialog by viewModel.showPreferencesDialog.collectAsStateWithLifecycle()
+            val showAiDialog by viewModel.showAiDialog.collectAsStateWithLifecycle()
+            val showSketchwareDialog by viewModel.showSketchwareDialog.collectAsStateWithLifecycle()
 
             val configName by viewModel.configName.collectAsStateWithLifecycle()
             val configPackage by viewModel.configPackage.collectAsStateWithLifecycle()
             val configLocation by viewModel.configLocation.collectAsStateWithLifecycle()
             val configLanguage by viewModel.configLanguage.collectAsStateWithLifecycle()
             val configMinSdk by viewModel.configMinSdk.collectAsStateWithLifecycle()
+            val configIosTarget by viewModel.configIosTarget.collectAsStateWithLifecycle()
             val configUseKts by viewModel.configUseKts.collectAsStateWithLifecycle()
             val configNameError by viewModel.configNameError.collectAsStateWithLifecycle()
 
@@ -138,7 +142,8 @@ class MainActivity : ComponentActivity() {
                                     viewModel.selectTab("settings.gradle")
                                 },
                                 onCloudSync = { viewModel.setShowCloudSyncDialog(true) },
-                                onSupportDeveloper = { viewModel.navigateTo(Screen.SupportDeveloper) }
+                                onSupportDeveloper = { viewModel.navigateTo(Screen.SupportDeveloper) },
+                                onDeleteProject = { viewModel.deleteProject(it) }
                             )
                         }
                         Screen.SupportDeveloper -> {
@@ -166,6 +171,8 @@ class MainActivity : ComponentActivity() {
                                 onLanguageChange = { viewModel.setConfigLanguage(it) },
                                 minSdk = configMinSdk,
                                 onMinSdkChange = { viewModel.setConfigMinSdk(it) },
+                                iosTarget = configIosTarget,
+                                onIosTargetChange = { viewModel.setConfigIosTarget(it) },
                                 useKts = configUseKts,
                                 onUseKtsChange = { viewModel.setConfigUseKts(it) },
                                 errorMessage = configNameError,
@@ -217,8 +224,23 @@ class MainActivity : ComponentActivity() {
                                     onOpenGitHub = { viewModel.setShowGitHubDialog(true) },
                                     onOpenCloudSync = { viewModel.setShowCloudSyncDialog(true) },
                                     onOpenPreferences = { viewModel.setShowPreferencesDialog(true) },
+                                    onOpenVisualDesigner = { viewModel.navigateTo(Screen.VisualDesigner) },
+                                    onOpenAiAssistant = { viewModel.setShowAiDialog(true) },
+                                    onOpenSketchware = { viewModel.setShowSketchwareDialog(true) },
                                     onCloseProject = { viewModel.navigateTo(Screen.Welcome) }
                                 )
+                            }
+                        }
+                        Screen.VisualDesigner -> {
+                            activeProject?.let { proj ->
+                                VisualDesignerScreen(
+                                    project = proj,
+                                    onBack = { viewModel.navigateTo(Screen.Workspace) },
+                                    onRunBuild = { viewModel.runBuildAndInstall(context) },
+                                    onOpenConfiguration = { viewModel.setShowSketchwareDialog(true) }
+                                )
+                            } ?: run {
+                                viewModel.navigateTo(Screen.Welcome)
                             }
                         }
                     }
@@ -237,8 +259,8 @@ class MainActivity : ComponentActivity() {
                     if (showAppLogoDialog && activeProject != null) {
                         AppLogoDialog(
                             project = activeProject!!,
-                            onSaveLogo = { color, symbol ->
-                                viewModel.updateAppLogo(color, symbol)
+                            onSaveLogo = { color, symbol, customUri ->
+                                viewModel.updateAppLogo(color, symbol, customUri)
                             },
                             onDismiss = { viewModel.setShowAppLogoDialog(false) }
                         )
@@ -284,6 +306,25 @@ class MainActivity : ComponentActivity() {
                             fontSize = editorFontSize,
                             onFontSizeChange = { viewModel.setFontSize(it) },
                             onDismiss = { viewModel.setShowPreferencesDialog(false) }
+                        )
+                    }
+
+                    if (showAiDialog) {
+                        AiAssistantDialog(
+                            projectFiles = projectFiles,
+                            activeFile = currentFile,
+                            onApplyCodeToFile = { code ->
+                                viewModel.updateEditorCode(code)
+                                viewModel.setShowAiDialog(false)
+                            },
+                            onDismiss = { viewModel.setShowAiDialog(false) }
+                        )
+                    }
+
+                    if (showSketchwareDialog && activeProject != null) {
+                        SketchwareConfigDialog(
+                            project = activeProject!!,
+                            onDismiss = { viewModel.setShowSketchwareDialog(false) }
                         )
                     }
 

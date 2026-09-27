@@ -38,6 +38,9 @@ fun ChooseTemplateScreen(
 ) {
     val templates = listOf(
         TemplateItem("no_activity", "No Activity", "Kotlin/Java", "Template without any pre-configured Activity", "no_activity"),
+        TemplateItem("music_app", "Music App", "Kotlin", "Full audio player, playback controls & playlist", "music"),
+        TemplateItem("calculator", "Calculator", "Kotlin", "Modern interactive math calculator with display", "calculator"),
+        TemplateItem("puzzle_game", "Puzzle Game", "Kotlin", "Interactive 15-sliding tile puzzle game", "puzzle"),
         TemplateItem("basic", "Basic Activity", "Kotlin", "Standard toolbar and floating action button", "basic"),
         TemplateItem("empty", "Empty Activity", "Kotlin", "Standard single empty activity", "empty"),
         TemplateItem("compose", "Compose Activity", "Kotlin", "Modern Jetpack Compose activity with declarative UI", "compose"),
@@ -259,6 +262,27 @@ fun TemplateVisualPreview(previewType: String) {
                         .height(18.dp)
                         .background(Color(0xFF00C853))
                 )
+            }
+        }
+        "music" -> {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "🎵", fontSize = 28.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "Music Player", color = IdeAccentPeach, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        "calculator" -> {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "🧮", fontSize = 28.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "Calculator", color = IdeAccentGreen, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+        "puzzle" -> {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(text = "🧩", fontSize = 28.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(text = "15-Puzzle", color = IdeAccentCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
         }
         "python" -> {

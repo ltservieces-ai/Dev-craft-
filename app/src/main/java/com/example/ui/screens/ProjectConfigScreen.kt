@@ -33,6 +33,8 @@ fun ProjectConfigScreen(
     onLanguageChange: (String) -> Unit,
     minSdk: String,
     onMinSdkChange: (String) -> Unit,
+    iosTarget: String = "iOS 18.0 (Latest)",
+    onIosTargetChange: (String) -> Unit = {},
     useKts: Boolean,
     onUseKtsChange: (Boolean) -> Unit,
     errorMessage: String?,
@@ -43,15 +45,29 @@ fun ProjectConfigScreen(
     var languageExpanded by remember { mutableStateOf(false) }
 
     val sdkList = listOf(
-        "API 21: Android 5.0 (Lollipop)",
-        "API 24: Android 7.0 (Nougat)",
-        "API 26: Android 8.0 (Oreo)",
-        "API 30: Android 11 (Red Velvet Cake)",
-        "API 33: Android 13 (Tiramisu)",
+        "API 36: Android 16 (Baklava - Latest)",
+        "API 35: Android 15 (Vanilla Ice Cream)",
         "API 34: Android 14 (Upside Down Cake)",
-        "API 36: Android 16 (Baklava)"
+        "API 33: Android 13 (Tiramisu)",
+        "API 31: Android 12 (Snow Cone)",
+        "API 30: Android 11 (Red Velvet Cake)",
+        "API 29: Android 10 (Q)",
+        "API 28: Android 9.0 (Pie)",
+        "API 26: Android 8.0 (Oreo)",
+        "API 24: Android 7.0 (Nougat)",
+        "API 21: Android 5.0 (Lollipop)"
     )
     var sdkExpanded by remember { mutableStateOf(false) }
+
+    val iosTargetList = listOf(
+        "iOS 18.2 (Latest 2025)",
+        "iOS 18.0 (Stable)",
+        "iOS 17.5",
+        "iOS 17.0",
+        "iOS 16.4",
+        "iOS 15.0"
+    )
+    var iosExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = IdeDarkBackground,
@@ -285,6 +301,49 @@ fun ProjectConfigScreen(
                                 onClick = {
                                     onMinSdkChange(sdk)
                                     sdkExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Cross-Platform iOS Target dropdown
+                ExposedDropdownMenuBox(
+                    expanded = iosExpanded,
+                    onExpandedChange = { iosExpanded = !iosExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = iosTarget,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("iOS Deployment Target", color = IdeTextSecondary) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = iosExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = IdeAccentPeach,
+                            unfocusedBorderColor = IdeDarkOutline,
+                            focusedTextColor = IdeTextPrimary,
+                            unfocusedTextColor = IdeTextPrimary,
+                            focusedContainerColor = IdeDarkCard,
+                            unfocusedContainerColor = IdeDarkCard
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = iosExpanded,
+                        onDismissRequest = { iosExpanded = false },
+                        modifier = Modifier.background(IdeDarkSurfaceVariant)
+                    ) {
+                        iosTargetList.forEach { target ->
+                            DropdownMenuItem(
+                                text = { Text(target, color = IdeTextPrimary) },
+                                onClick = {
+                                    onIosTargetChange(target)
+                                    iosExpanded = false
                                 }
                             )
                         }

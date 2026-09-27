@@ -167,6 +167,294 @@ fun Greeting(name: String) {
                             )
                         )
                     }
+                    "Music App" -> {
+                        files.add(
+                            ProjectFileEntity(
+                                projectId = project.id,
+                                relativePath = "app/src/main/kotlin/$pkgPath/MainActivity.kt",
+                                content = """
+package ${project.packageName}
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.SeekBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+
+class MainActivity : AppCompatActivity() {
+    private var isPlaying = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val btnPlay = findViewById<Button>(R.id.btn_play)
+        val tvTrack = findViewById<TextView>(R.id.tv_track_title)
+        val seekBar = findViewById<SeekBar>(R.id.seek_bar)
+
+        seekBar.progress = 25
+
+        btnPlay.setOnClickListener {
+            isPlaying = !isPlaying
+            btnPlay.text = if (isPlaying) "Pause ⏸" else "Play ▶"
+            tvTrack.text = if (isPlaying) "Playing: Summer Waves (DevCraft)" else "Paused: Summer Waves"
+            Toast.makeText(this, if (isPlaying) "Audio playback started" else "Playback paused", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+                                """.trimIndent()
+                            )
+                        )
+                        files.add(
+                            ProjectFileEntity(
+                                projectId = project.id,
+                                relativePath = "app/src/main/res/layout/activity_main.xml",
+                                content = """
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="#121214">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🎵 ${project.name}"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_track_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Track: Summer Waves (DevCraft Remix)"
+        android:textColor="#DCA683"
+        android:textSize="14sp" />
+
+    <SeekBar
+        android:id="@+id/seek_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:max="100" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="24dp">
+
+        <Button
+            android:id="@+id/btn_prev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏮ Prev" />
+
+        <Button
+            android:id="@+id/btn_play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:text="Play ▶" />
+
+        <Button
+            android:id="@+id/btn_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Next ⏭" />
+    </LinearLayout>
+</LinearLayout>
+                                """.trimIndent()
+                            )
+                        )
+                    }
+                    "Calculator" -> {
+                        files.add(
+                            ProjectFileEntity(
+                                projectId = project.id,
+                                relativePath = "app/src/main/kotlin/$pkgPath/MainActivity.kt",
+                                content = """
+package ${project.packageName}
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+
+class MainActivity : AppCompatActivity() {
+    private var currentInput = "0"
+    private var firstVal = 0.0
+    private var pendingOp = ""
+    private var isNewOp = true
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val tvDisplay = findViewById<TextView>(R.id.tv_display)
+        val btnClear = findViewById<Button>(R.id.btn_clear)
+        val btnEqual = findViewById<Button>(R.id.btn_equal)
+
+        btnClear.setOnClickListener {
+            currentInput = "0"
+            firstVal = 0.0
+            pendingOp = ""
+            isNewOp = true
+            tvDisplay.text = currentInput
+        }
+
+        btnEqual.setOnClickListener {
+            if (pendingOp.isNotEmpty()) {
+                val second = currentInput.toDoubleOrNull() ?: 0.0
+                val result = when (pendingOp) {
+                    "+" -> firstVal + second
+                    "-" -> firstVal - second
+                    "*" -> firstVal * second
+                    "/" -> if (second != 0.0) firstVal / second else 0.0
+                    else -> second
+                }
+                currentInput = if (result % 1.0 == 0.0) result.toLong().toString() else result.toString()
+                pendingOp = ""
+                isNewOp = true
+                tvDisplay.text = currentInput
+            }
+        }
+    }
+}
+                                """.trimIndent()
+                            )
+                        )
+                        files.add(
+                            ProjectFileEntity(
+                                projectId = project.id,
+                                relativePath = "app/src/main/res/layout/activity_main.xml",
+                                content = """
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#121214">
+
+    <TextView
+        android:id="@+id/tv_display"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:gravity="end|center_vertical"
+        android:text="0"
+        android:textColor="#FFFFFF"
+        android:textSize="36sp"
+        android:padding="16dp"
+        android:background="#1E1D24" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="20dp">
+        <Button android:id="@+id/btn_clear" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="C" />
+        <Button android:id="@+id/btn_div" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="/" />
+        <Button android:id="@+id/btn_mult" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="*" />
+        <Button android:id="@+id/btn_sub" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="-" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="10dp">
+        <Button android:id="@+id/btn_add" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="+" />
+        <Button android:id="@+id/btn_equal" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="3" android:text="=" />
+    </LinearLayout>
+</LinearLayout>
+                                """.trimIndent()
+                            )
+                        )
+                    }
+                    "Puzzle Game" -> {
+                        files.add(
+                            ProjectFileEntity(
+                                projectId = project.id,
+                                relativePath = "app/src/main/kotlin/$pkgPath/MainActivity.kt",
+                                content = """
+package ${project.packageName}
+
+import android.os.Bundle
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+
+class MainActivity : AppCompatActivity() {
+    private var moves = 0
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        val tvMoves = findViewById<TextView>(R.id.tv_moves)
+        val btnShuffle = findViewById<Button>(R.id.btn_shuffle)
+
+        btnShuffle.setOnClickListener {
+            moves = 0
+            tvMoves.text = "Moves: ${'$'}moves"
+            Toast.makeText(this, "Puzzle Shuffled! Start sliding tiles.", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+                                """.trimIndent()
+                            )
+                        )
+                        files.add(
+                            ProjectFileEntity(
+                                projectId = project.id,
+                                relativePath = "app/src/main/res/layout/activity_main.xml",
+                                content = """
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="24dp"
+    android:background="#121214">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🧩 ${project.name}"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_moves"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Moves: 0"
+        android:textColor="#38C779"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btn_shuffle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Reset &amp; Shuffle" />
+</LinearLayout>
+                                """.trimIndent()
+                            )
+                        )
+                    }
                     else -> {
                         files.add(
                             ProjectFileEntity(
@@ -653,6 +941,10 @@ class MainActivity : AppCompatActivity() {
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="${project.packageName}">
+
+    <uses-sdk
+        android:minSdkVersion="24"
+        android:targetSdkVersion="35" />
 
 $permissionsBuilder
     <application

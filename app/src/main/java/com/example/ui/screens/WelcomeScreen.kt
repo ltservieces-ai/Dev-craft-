@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -36,9 +38,15 @@ fun WelcomeScreen(
     onIdeConfig: () -> Unit,
     onDocumentation: () -> Unit,
     onCloudSync: () -> Unit,
-    onSupportDeveloper: () -> Unit
+    onSupportDeveloper: () -> Unit,
+    onDeleteProject: (Long) -> Unit = {}
 ) {
-    var showProjectsSheet by remember { mutableStateOf(false) }
+    // Clean mode state: 0 = "Get Started" (Screenshot 3), 1 = "Open Project" (Screenshot 4)
+    var currentViewMode by remember { mutableStateOf(0) }
+
+    BackHandler(enabled = currentViewMode != 0) {
+        currentViewMode = 0
+    }
 
     Scaffold(
         containerColor = IdeDarkBackground,
@@ -51,200 +59,243 @@ fun WelcomeScreen(
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            IdeHeader()
+            if (currentViewMode == 0) {
+                // SCREENSHOT 3: Android Studio Welcome / Get Started Screen
+                IdeHeader()
 
-            Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-            Text(
-                text = "Get started",
-                color = IdeTextPrimary,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Start your new awesome project!",
-                color = IdeTextSecondary,
-                fontSize = 13.sp
-            )
+                Text(
+                    text = "Get started",
+                    color = IdeTextPrimary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Start your new awesome project!",
+                    color = IdeTextSecondary,
+                    fontSize = 13.sp
+                )
 
-            Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-            // Scrollable actions or project list
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Primary Create Project Card
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.Add,
-                        label = "Create project",
-                        isPrimary = true,
-                        onClick = onCreateProject
-                    )
-                }
-
-                // Open existing project Card
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.Folder,
-                        label = "Open existing project (${projects.size})",
-                        onClick = { showProjectsSheet = !showProjectsSheet }
-                    )
-                }
-
-                // If user toggles or wants to see projects directly:
-                if (showProjectsSheet) {
+                // Scrollable actions list with zero duplicate elements
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // Primary Create Project Card
                     item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = IdeDarkSurface),
-                            shape = RoundedCornerShape(16.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, IdeDarkOutline)
-                        ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "Open Project",
-                                        color = IdeTextPrimary,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 16.sp
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(20.dp))
-                                            .background(IdeAccentPeach.copy(alpha = 0.2f))
-                                            .border(1.dp, IdeAccentPeach.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
-                                            .clickable { onCreateProject() }
-                                            .padding(horizontal = 10.dp, vertical = 5.dp)
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.FolderOpen,
-                                                contentDescription = null,
-                                                tint = IdeAccentPeach,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = "import project",
-                                                color = IdeAccentPeach,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        }
-                                    }
-                                }
+                        MenuActionCard(
+                            icon = Icons.Default.Add,
+                            label = "Create project",
+                            isPrimary = true,
+                            onClick = onCreateProject
+                        )
+                    }
 
-                                Spacer(modifier = Modifier.height(10.dp))
+                    // Open existing project Card - switches view cleanly to Open Project view
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.Folder,
+                            label = "Open existing project (${projects.size})",
+                            onClick = { currentViewMode = 1 }
+                        )
+                    }
 
-                                OutlinedTextField(
-                                    value = searchQuery,
-                                    onValueChange = onSearchChange,
-                                    placeholder = { Text("Search projects...", color = IdeTextTertiary, fontSize = 13.sp) },
-                                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = IdeTextTertiary) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedContainerColor = IdeDarkSurfaceVariant,
-                                        unfocusedContainerColor = IdeDarkSurfaceVariant,
-                                        focusedBorderColor = IdeAccentPeach,
-                                        unfocusedBorderColor = IdeDarkOutline,
-                                        focusedTextColor = IdeTextPrimary,
-                                        unfocusedTextColor = IdeTextPrimary
-                                    ),
-                                    shape = RoundedCornerShape(10.dp),
-                                    singleLine = true
-                                )
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.AltRoute,
+                            label = "Clone git repository",
+                            onClick = onCloneGit
+                        )
+                    }
 
-                                Spacer(modifier = Modifier.height(10.dp))
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.Terminal,
+                            label = "Terminal",
+                            onClick = onOpenTerminal
+                        )
+                    }
 
-                                if (projects.isEmpty()) {
-                                    Text(
-                                        text = "No projects found.",
-                                        color = IdeTextSecondary,
-                                        fontSize = 13.sp,
-                                        modifier = Modifier.padding(vertical = 12.dp)
-                                    )
-                                } else {
-                                    projects.forEach { project ->
-                                        ProjectRowItem(
-                                            project = project,
-                                            onClick = { onOpenProject(project) }
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                    }
-                                }
-                            }
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.Settings,
+                            label = "Preferences",
+                            onClick = onPreferences
+                        )
+                    }
+
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.Build,
+                            label = "IDE Configurations",
+                            onClick = onIdeConfig
+                        )
+                    }
+
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.MenuBook,
+                            label = "Documentation",
+                            onClick = onDocumentation
+                        )
+                    }
+
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.CloudSync,
+                            label = "Cloud Sync & Backup",
+                            onClick = onCloudSync
+                        )
+                    }
+
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.Favorite,
+                            label = "Support Developer (8791738300@fam)",
+                            customTint = Color(0xFFF87171),
+                            onClick = onSupportDeveloper
+                        )
+                    }
+
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+            } else {
+                // SCREENSHOT 4: Dedicated Open Project Screen
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { currentViewMode = 0 }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back to Welcome",
+                                tint = IdeTextPrimary
+                            )
+                        }
+                        Text(
+                            text = "Open Project",
+                            color = IdeTextPrimary,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 18.sp
+                        )
+                    }
+
+                    // "+ import project" pill badge matching Screenshot 4
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(IdeAccentPeach.copy(alpha = 0.2f))
+                            .border(1.dp, IdeAccentPeach.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+                            .clickable { onCreateProject() }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = IdeAccentPeach,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "import project",
+                                color = IdeAccentPeach,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
                         }
                     }
                 }
 
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.AltRoute,
-                        label = "Clone git repository",
-                        onClick = onCloneGit
-                    )
-                }
+                Spacer(modifier = Modifier.height(14.dp))
 
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.Terminal,
-                        label = "Terminal",
-                        onClick = onOpenTerminal
-                    )
-                }
+                // Search field matching Screenshot 4
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchChange,
+                    placeholder = { Text("Search projects...", color = IdeTextTertiary, fontSize = 13.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = IdeTextTertiary) },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { onSearchChange("") }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear", tint = IdeTextTertiary, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = IdeDarkSurfaceVariant,
+                        unfocusedContainerColor = IdeDarkSurfaceVariant,
+                        focusedBorderColor = IdeAccentPeach,
+                        unfocusedBorderColor = IdeDarkOutline,
+                        focusedTextColor = IdeTextPrimary,
+                        unfocusedTextColor = IdeTextPrimary
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    singleLine = true
+                )
 
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.Settings,
-                        label = "Preferences",
-                        onClick = onPreferences
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
 
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.Build,
-                        label = "IDE Configurations",
-                        onClick = onIdeConfig
-                    )
-                }
-
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.MenuBook,
-                        label = "Documentation",
-                        onClick = onDocumentation
-                    )
-                }
-
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.CloudSync,
-                        label = "Cloud Sync & Backup",
-                        onClick = onCloudSync
-                    )
-                }
-
-                item {
-                    MenuActionCard(
-                        icon = Icons.Default.Favorite,
-                        label = "Support Developer (8791738300@fam)",
-                        customTint = Color(0xFFF87171),
-                        onClick = onSupportDeveloper
-                    )
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
+                if (projects.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.FolderOpen,
+                                contentDescription = null,
+                                tint = IdeTextTertiary,
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = if (searchQuery.isNotBlank()) "No projects matching '$searchQuery'" else "No projects yet",
+                                color = IdeTextSecondary,
+                                fontSize = 14.sp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Button(
+                                onClick = onCreateProject,
+                                colors = ButtonDefaults.buttonColors(containerColor = IdeAccentPeach)
+                            ) {
+                                Text("Create First Project", color = Color(0xFF28180E))
+                            }
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(projects, key = { it.id }) { project ->
+                            ProjectRowItem(
+                                project = project,
+                                onClick = { onOpenProject(project) },
+                                onDelete = { onDeleteProject(project.id) }
+                            )
+                        }
+                        item {
+                            Spacer(modifier = Modifier.height(24.dp))
+                        }
+                    }
                 }
             }
         }
@@ -300,8 +351,11 @@ fun MenuActionCard(
 @Composable
 fun ProjectRowItem(
     project: ProjectEntity,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit = {}
 ) {
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -310,59 +364,103 @@ fun ProjectRowItem(
         colors = CardDefaults.cardColors(containerColor = IdeDarkCard),
         border = androidx.compose.foundation.BorderStroke(1.dp, IdeDarkOutline)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = project.name,
-                    color = IdeTextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color(0xFF3F3730))
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Recent",
-                        color = IdeAccentPeach,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
+                        text = project.name,
+                        color = IdeTextPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
                     )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color(0xFF3F3730))
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "Recent",
+                            color = IdeAccentPeach,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${project.location}/${project.name}",
+                    color = IdeTextTertiary,
+                    fontSize = 11.sp,
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "• ${project.language}",
+                        color = IdeAccentGreen,
+                        fontSize = 11.sp
+                    )
+                    Text(
+                        text = "• ${project.template}",
+                        color = IdeTextSecondary,
+                        fontSize = 11.sp
+                    )
+                    if (project.customLogoUri.isNotBlank()) {
+                        Text(
+                            text = "• Custom Logo",
+                            color = IdeAccentPeach,
+                            fontSize = 11.sp
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-                text = "${project.location}/${project.name}",
-                color = IdeTextTertiary,
-                fontSize = 11.sp,
-                maxLines = 1
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "• ${project.language}",
-                    color = IdeAccentGreen,
-                    fontSize = 11.sp
-                )
-                Text(
-                    text = "• ${project.template}",
-                    color = IdeTextSecondary,
-                    fontSize = 11.sp
+
+            IconButton(onClick = { showDeleteConfirm = true }) {
+                Icon(
+                    imageVector = Icons.Default.DeleteOutline,
+                    contentDescription = "Delete Project",
+                    tint = IdeTextTertiary,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
+    }
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Project", color = IdeTextPrimary) },
+            text = { Text("Are you sure you want to delete '${project.name}'?", color = IdeTextSecondary) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDelete()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF87171))
+                ) {
+                    Text("Delete", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel", color = IdeTextSecondary)
+                }
+            },
+            containerColor = IdeDarkSurface
+        )
     }
 }

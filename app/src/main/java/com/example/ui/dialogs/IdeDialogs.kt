@@ -1,5 +1,8 @@
 package com.example.ui.dialogs
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,9 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.data.model.ProjectEntity
 import com.example.ui.theme.*
 
@@ -168,11 +173,20 @@ fun PermissionToggleRow(
 @Composable
 fun AppLogoDialog(
     project: ProjectEntity,
-    onSaveLogo: (String, String) -> Unit,
+    onSaveLogo: (String, String, String) -> Unit,
     onDismiss: () -> Unit
 ) {
     var selectedColor by remember { mutableStateOf(project.iconColorHex) }
     var selectedSymbol by remember { mutableStateOf(project.iconSymbol) }
+    var customLogoUriString by remember { mutableStateOf(project.customLogoUri) }
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            customLogoUriString = it.toString()
+        }
+    }
 
     val colors = listOf(
         "#38C779", "#DCA683", "#4AC2E2", "#ECC94B", "#F87171", "#818CF8", "#A855F7", "#1E1D24"
@@ -185,36 +199,74 @@ fun AppLogoDialog(
         title = { Text("App Icon & Logo Customizer", color = IdeTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.SemiBold) },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Live Icon Preview
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(86.dp)
                         .clip(RoundedCornerShape(20.dp))
                         .background(Color(android.graphics.Color.parseColor(selectedColor)))
-                        .border(2.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(20.dp)),
+                        .border(2.dp, IdeAccentPeach.copy(alpha = 0.8f), RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    val iconVector = when (selectedSymbol) {
-                        "android" -> Icons.Default.Android
-                        "rocket" -> Icons.Default.RocketLaunch
-                        "music" -> Icons.Default.MusicNote
-                        "game" -> Icons.Default.SportsEsports
-                        "terminal" -> Icons.Default.Terminal
-                        "star" -> Icons.Default.Star
-                        else -> Icons.Default.Code
+                    if (customLogoUriString.isNotBlank()) {
+                        AsyncImage(
+                            model = customLogoUriString,
+                            contentDescription = "Custom App Logo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        val iconVector = when (selectedSymbol) {
+                            "android" -> Icons.Default.Android
+                            "rocket" -> Icons.Default.RocketLaunch
+                            "music" -> Icons.Default.MusicNote
+                            "game" -> Icons.Default.SportsEsports
+                            "terminal" -> Icons.Default.Terminal
+                            "star" -> Icons.Default.Star
+                            else -> Icons.Default.Code
+                        }
+                        Icon(
+                            imageVector = iconVector,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(44.dp)
+                        )
                     }
-                    Icon(
-                        imageVector = iconVector,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(42.dp)
-                    )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Custom Image from Device Files button
+                Button(
+                    onClick = { filePickerLauncher.launch("image/*") },
+                    colors = ButtonDefaults.buttonColors(containerColor = IdeDarkCard),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, IdeAccentPeach),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FolderOpen,
+                        contentDescription = null,
+                        tint = IdeAccentPeach,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Choose Logo From Files / Gallery", color = IdeAccentPeach, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                }
+
+                if (customLogoUriString.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    TextButton(onClick = { customLogoUriString = "" }) {
+                        Text("Reset to built-in symbol icon", color = Color(0xFFF87171), fontSize = 12.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text("Background Color", color = IdeTextSecondary, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start))
                 Spacer(modifier = Modifier.height(8.dp))
@@ -237,21 +289,24 @@ fun AppLogoDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("Logo Glyph Symbol", color = IdeTextSecondary, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start))
+                Text("Built-in Logo Glyph Symbol", color = IdeTextSecondary, fontSize = 12.sp, modifier = Modifier.align(Alignment.Start))
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     symbols.forEach { sym ->
-                        val isSelected = selectedSymbol == sym
+                        val isSelected = selectedSymbol == sym && customLogoUriString.isBlank()
                         Box(
                             modifier = Modifier
                                 .size(34.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(if (isSelected) IdeAccentPeach.copy(alpha = 0.2f) else IdeDarkCard)
                                 .border(1.dp, if (isSelected) IdeAccentPeach else IdeDarkOutline, RoundedCornerShape(8.dp))
-                                .clickable { selectedSymbol = sym },
+                                .clickable {
+                                    selectedSymbol = sym
+                                    customLogoUriString = ""
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
@@ -273,7 +328,7 @@ fun AppLogoDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onSaveLogo(selectedColor, selectedSymbol) },
+                onClick = { onSaveLogo(selectedColor, selectedSymbol, customLogoUriString) },
                 colors = ButtonDefaults.buttonColors(containerColor = IdeAccentPeach)
             ) {
                 Text("Apply Logo", color = Color(0xFF28180E), fontWeight = FontWeight.SemiBold)

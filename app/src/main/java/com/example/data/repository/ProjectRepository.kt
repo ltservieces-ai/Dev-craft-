@@ -77,7 +77,8 @@ class ProjectRepository(private val database: AppDatabase) {
         language: String,
         minSdk: String,
         useKts: Boolean,
-        template: String
+        template: String,
+        iosTarget: String = "iOS 18.0"
     ): Long = withContext(Dispatchers.IO) {
         val project = ProjectEntity(
             name = name,
@@ -87,6 +88,7 @@ class ProjectRepository(private val database: AppDatabase) {
             minSdk = minSdk,
             useKts = useKts,
             template = template,
+            iosTarget = iosTarget,
             createdAt = System.currentTimeMillis(),
             lastModified = System.currentTimeMillis()
         )
@@ -159,9 +161,16 @@ class ProjectRepository(private val database: AppDatabase) {
         }
     }
 
-    suspend fun updateAppIcon(projectId: Long, colorHex: String, symbol: String) = withContext(Dispatchers.IO) {
+    suspend fun updateAppIcon(projectId: Long, colorHex: String, symbol: String, customLogoUri: String = "") = withContext(Dispatchers.IO) {
         val proj = projectDao.getProjectByIdDirect(projectId) ?: return@withContext
-        projectDao.updateProject(proj.copy(iconColorHex = colorHex, iconSymbol = symbol, lastModified = System.currentTimeMillis()))
+        projectDao.updateProject(
+            proj.copy(
+                iconColorHex = colorHex,
+                iconSymbol = symbol,
+                customLogoUri = customLogoUri,
+                lastModified = System.currentTimeMillis()
+            )
+        )
     }
 
     suspend fun deleteProject(id: Long) = withContext(Dispatchers.IO) {
