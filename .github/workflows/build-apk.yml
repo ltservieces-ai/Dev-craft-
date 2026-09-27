@@ -88,40 +88,24 @@ jobs:
           gradle :app:assembleDebug --stacktrace --no-daemon
 
       - name: Verify debug APK
+        id: find_apk
         run: |
-          EXPECTED_APK="app/build/outputs/apk/debug/app-debug.apk"
-          if [ ! -f "$EXPECTED_APK" ]; then
-            echo "::warning::Expected APK $EXPECTED_APK was not found. Searching within app/build/outputs/apk..."
-            if [ -d "app/build/outputs/apk" ]; then
-              find app/build/outputs/apk -maxdepth 3 -type f -name "*.apk"
-            else
-              echo "Directory app/build/outputs/apk does not exist."
-            fi
-            echo "::error::Required debug APK file $EXPECTED_APK does not exist."
+          FOUND_APK=$(find app/build/outputs/apk -type f -name "*debug*.apk" ! -name "*androidTest*" | head -n 1)
+          
+          if [ -z "$FOUND_APK" ] \vert{}\vert{} [ ! -s "$FOUND_APK" ]; then
+            echo "::error::No valid debug APK found in app/build/outputs/apk."
+            find app/build/outputs/apk -maxdepth 4 -type f || true
             exit 1
           fi
 
-          if [ ! -s "$EXPECTED_APK" ]; then
-            echo "::error::Debug APK file $EXPECTED_APK exists but is empty (0 bytes)."
-            exit 1
-          fi
-
-          case "$EXPECTED_APK" in
-            *.apk) ;;
-            *)
-              echo "::error::File $EXPECTED_APK does not have a .apk extension."
-              exit 1
-              ;;
-          esac
-
-          APK_SIZE=$(stat -c%s "$EXPECTED_APK" 2>/dev/null \vert{}\vert{} stat -f\%z "$EXPECTED_APK" 2>/dev/null)
-          echo "Verified APK: $EXPECTED_APK (Size:$APK_SIZE bytes)"
+          echo "Found debug APK at: $FOUND_APK"
+          echo "apk_path=$FOUND_APK" >> "$GITHUB_OUTPUT"
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ steps.find_apk.outputs.apk_path }}
           if-no-files-found: error
 
       - name: Prepare APK release asset
@@ -138,7 +122,7 @@ jobs:
           ASSET_FILENAME="${SAFE_REPO_NAME}-debug-build-${{ github.run_number }}.apk"
           TARGET_PATH="${TEMP_ASSET_DIR}/${ASSET_FILENAME}"
 
-          cp -v "app/build/outputs/apk/debug/app-debug.apk" "$TARGET_PATH"
+          cp -v "${{ steps.find_apk.outputs.apk_path }}" "$TARGET_PATH"
 
           if [ ! -s "$TARGET_PATH" ]; then
             echo "::error::Prepared release asset $TARGET_PATH is missing or empty."
@@ -166,27 +150,16 @@ jobs:
             exit 1
           fi
 
-          case "$ASSET_PATH" in
-            *.apk) ;;
-            *)
-              echo "::error::Release asset $ASSET_PATH must have a .apk extension."
-              exit 1
-              ;;
-          esac
-
           RELEASE_TAG="debug-apk-build-${{ github.run_number }}-${{ github.run_attempt }}"
           RELEASE_TITLE="Debug APK Build #${{ github.run_number }}"
 
-          NOTES="### Debug APK Build #${{ github.run_number }}
+          NOTES="Debug APK Build #${{ github.run_number }}
+          - Run Number: ${{ github.run_number }}
+          - Run Attempt: ${{ github.run_attempt }}
+          - Source Commit: ${{ github.sha }}
+          - Asset Name: ${ASSET_NAME}
 
-          This is an automatically generated debug APK built by GitHub Actions.
-
-          - **Run Number:** ${{ github.run_number }}
-          - **Run Attempt:** ${{ github.run_attempt }}
-          - **Source Commit:** ${{ github.sha }}
-          - **Asset Name:** ${ASSET_NAME}
-
-          > **Note:** This APK is intended for testing and development purposes. It is signed only with a temporary debug keystore and is not a Google Play Store production release."
+          Note: This APK is intended for testing and development purposes. It is signed only with a temporary debug keystore."
 
           echo "Creating GitHub Release with tag: $RELEASE_TAG"
           gh release create "$RELEASE_TAG" "$ASSET_PATH" \
@@ -229,15 +202,10 @@ jobs:
               echo "- **Actions Artifact:** The build artifact (\`app-debug-apk\`) is also preserved in this workflow run as a backup."
             } >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "::warning::GitHub Release publishing failed or was skipped, but the APK build succeeded."
-            echo "The debug APK artifact 'app-debug-apk' was uploaded and remains available in GitHub Actions."
-
+            echo "::warning::GitHub Release publishing failed or was skipped."
             {
               echo "## ⚠️ Debug APK Build Summary"
               echo ""
-              echo "✅ **Debug APK built successfully!**"
-              echo ""
-              echo "⚠️ **GitHub Release Notice:** Publishing to GitHub Releases could not be completed (Outcome: \`$RELEASE_OUTCOME\`)."
-              echo "- **Download Location:** You can download the verified APK directly from the **Summary > Artifacts** section above under \`app-debug-apk\`."
+              echo "Download the backup from the Actions run artifacts named **app-debug-apk**."
             } >> "$GITHUB_STEP_SUMMARY"
           fi
