@@ -114,8 +114,8 @@ jobs:
               ;;
           esac
 
-          APK_SIZE=$(stat -c%s "$EXPECTED_APK" 2>/dev/null || stat -f%z "$EXPECTED_APK" 2>/dev/null)
-          echo "Verified APK: $EXPECTED_APK (Size: $APK_SIZE bytes)"
+          APK_SIZE=$(stat -c%s "$EXPECTED_APK" 2>/dev/null \vert{}\vert{} stat -f\%z "$EXPECTED_APK" 2>/dev/null)
+          echo "Verified APK: $EXPECTED_APK (Size:$APK_SIZE bytes)"
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
@@ -130,7 +130,7 @@ jobs:
           TEMP_ASSET_DIR=$(mktemp -d -t apk-release-XXXXXX)
           REPO_RAW="${{ github.repository }}"
           REPO_NAME="${REPO_RAW##*/}"
-          SAFE_REPO_NAME=$(echo "$REPO_NAME" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//;s/-$//')
+          SAFE_REPO_NAME=$(echo "$REPO_NAME" \vert{} tr '[:upper:]' '[:lower:]' \vert{} tr -cs 'a-z0-9' '-' \vert{} sed 's/^-//;s/-$//')
           if [ -z "$SAFE_REPO_NAME" ]; then
             SAFE_REPO_NAME="android-app"
           fi
@@ -161,7 +161,7 @@ jobs:
           ASSET_PATH="${{ steps.prepare_asset.outputs.asset_path }}"
           ASSET_NAME="${{ steps.prepare_asset.outputs.asset_name }}"
 
-          if [ ! -f "$ASSET_PATH" ] || [ ! -s "$ASSET_PATH" ]; then
+          if [ ! -f "$ASSET_PATH" ] \vert{}\vert{} [ ! -s "$ASSET_PATH" ]; then
             echo "::error::Release asset $ASSET_PATH is invalid or missing."
             exit 1
           fi
@@ -177,19 +177,16 @@ jobs:
           RELEASE_TAG="debug-apk-build-${{ github.run_number }}-${{ github.run_attempt }}"
           RELEASE_TITLE="Debug APK Build #${{ github.run_number }}"
 
-          NOTES=$(cat <<EOF
-### Debug APK Build #${{ github.run_number }}
+          NOTES="### Debug APK Build #${{ github.run_number }}
 
-This is an automatically generated debug APK built by GitHub Actions.
+          This is an automatically generated debug APK built by GitHub Actions.
 
-- **Run Number:** ${{ github.run_number }}
-- **Run Attempt:** ${{ github.run_attempt }}
-- **Source Commit:** ${{ github.sha }}
-- **Asset Name:** ${ASSET_NAME}
+          - **Run Number:** ${{ github.run_number }}
+          - **Run Attempt:** ${{ github.run_attempt }}
+          - **Source Commit:** ${{ github.sha }}
+          - **Asset Name:** ${ASSET_NAME}
 
-> **Note:** This APK is intended for testing and development purposes. It is signed only with a temporary debug keystore and is not a Google Play Store production release.
-EOF
-)
+          > **Note:** This APK is intended for testing and development purposes. It is signed only with a temporary debug keystore and is not a Google Play Store production release."
 
           echo "Creating GitHub Release with tag: $RELEASE_TAG"
           gh release create "$RELEASE_TAG" "$ASSET_PATH" \
