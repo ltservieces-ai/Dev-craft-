@@ -72,11 +72,17 @@ fun WorkspaceScreen(
     onOpenVisualDesigner: () -> Unit = {},
     onOpenAiAssistant: () -> Unit = {},
     onOpenSketchware: () -> Unit = {},
+    onOpenAppRunner: () -> Unit = {},
+    onOpenSvgIcons: () -> Unit = {},
+    onOpenLibraries: () -> Unit = {},
+    onOpenTelegram: () -> Unit = {},
+    onOpenSupportDeveloper: () -> Unit = {},
     onCloseProject: () -> Unit
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showOverflowMenu by remember { mutableStateOf(false) }
+    var showRunDialog by remember { mutableStateOf(false) }
     var showNewFileDialog by remember { mutableStateOf(false) }
     var newFileName by remember { mutableStateOf("") }
 
@@ -138,7 +144,10 @@ fun WorkspaceScreen(
 
                     // Run / Stop button
                     IconButton(
-                        onClick = onRunBuild,
+                        onClick = {
+                            if (isBuilding) onRunBuild()
+                            else showRunDialog = true
+                        },
                         modifier = Modifier.size(40.dp)
                     ) {
                         if (isBuilding) {
@@ -164,30 +173,25 @@ fun WorkspaceScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(2.dp))
 
-                    // Build / Device Icon
-                    IconButton(
-                        onClick = {
-                            onTabSelected(BottomTab.BUILD_OUTPUT)
-                            onSetBottomSheetExpanded(true)
-                        }
-                    ) {
+                    // Telegram quick icon
+                    IconButton(onClick = onOpenTelegram) {
                         Icon(
-                            imageVector = Icons.Default.Smartphone,
-                            contentDescription = "Device",
-                            tint = IdeTextSecondary,
-                            modifier = Modifier.size(22.dp)
+                            imageVector = Icons.Default.Send,
+                            contentDescription = "Telegram Channel",
+                            tint = Color(0xFF229ED9),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
-                    // Permissions Dashboard quick icon
-                    IconButton(onClick = onOpenPermissions) {
+                    // Libraries quick icon
+                    IconButton(onClick = onOpenLibraries) {
                         Icon(
-                            imageVector = Icons.Default.Security,
-                            contentDescription = "Permissions Dashboard",
-                            tint = IdeAccentPeach,
-                            modifier = Modifier.size(22.dp)
+                            imageVector = Icons.Default.Extension,
+                            contentDescription = "Libraries",
+                            tint = Color(0xFF38BDF8),
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
@@ -197,7 +201,7 @@ fun WorkspaceScreen(
                             imageVector = Icons.Default.Palette,
                             contentDescription = "Visual Designer (Drag & Drop Beta)",
                             tint = IdeAccentGreen,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
@@ -205,9 +209,9 @@ fun WorkspaceScreen(
                     IconButton(onClick = onOpenAiAssistant) {
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = "AI Copilot & Code Engine",
+                            contentDescription = "AI Assistant",
                             tint = IdeAccentPeach,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
@@ -273,6 +277,39 @@ fun WorkspaceScreen(
                                     onExportCrossPlatform()
                                 },
                                 leadingIcon = { Icon(Icons.Default.Archive, contentDescription = null, tint = IdeAccentPeach) }
+                            )
+                            HorizontalDivider(color = IdeDarkOutline)
+                            DropdownMenuItem(
+                                text = { Text("Libraries & Frameworks", color = Color(0xFF38BDF8)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onOpenLibraries()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Extension, contentDescription = null, tint = Color(0xFF38BDF8)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("SVG & Vector Icons Pack", color = IdeAccentPeach) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onOpenSvgIcons()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Category, contentDescription = null, tint = IdeAccentPeach) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Telegram: @devcraftupdates", color = Color(0xFF229ED9)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onOpenTelegram()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Send, contentDescription = null, tint = Color(0xFF229ED9)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Support Developer (8791738300@fam)", color = Color(0xFFF87171)) },
+                                onClick = {
+                                    showOverflowMenu = false
+                                    onOpenSupportDeveloper()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Favorite, contentDescription = null, tint = Color(0xFFF87171)) }
                             )
                             HorizontalDivider(color = IdeDarkOutline)
                             DropdownMenuItem(
@@ -506,6 +543,65 @@ fun WorkspaceScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showNewFileDialog = false }) {
+                    Text("Cancel", color = IdeTextSecondary)
+                }
+            }
+        )
+    }
+
+    // Run Options Dialog
+    if (showRunDialog) {
+        AlertDialog(
+            onDismissRequest = { showRunDialog = false },
+            containerColor = IdeDarkSurface,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = IdeAccentGreen)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Run ${project.name}", color = IdeTextPrimary, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = "Choose execution target for your app:",
+                        fontSize = 13.sp,
+                        color = IdeTextSecondary
+                    )
+
+                    Button(
+                        onClick = {
+                            showRunDialog = false
+                            onOpenAppRunner()
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = IdeAccentGreen),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.Default.PhoneAndroid, contentDescription = null, tint = Color(0xFF0F291E))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Launch Live App Runner", color = Color(0xFF0F291E), fontWeight = FontWeight.Bold)
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            showRunDialog = false
+                            onRunBuild()
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = IdeAccentPeach),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, IdeAccentPeach)
+                    ) {
+                        Icon(Icons.Default.Build, contentDescription = null, tint = IdeAccentPeach)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Compile & Direct Install APK", fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showRunDialog = false }) {
                     Text("Cancel", color = IdeTextSecondary)
                 }
             }

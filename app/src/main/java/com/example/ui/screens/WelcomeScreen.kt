@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -39,6 +40,9 @@ fun WelcomeScreen(
     onDocumentation: () -> Unit,
     onCloudSync: () -> Unit,
     onSupportDeveloper: () -> Unit,
+    onOpenTelegram: () -> Unit = {},
+    onOpenSvgIcons: () -> Unit = {},
+    onOpenAiChat: () -> Unit = {},
     onDeleteProject: (Long) -> Unit = {}
 ) {
     // Clean mode state: 0 = "Get Started" (Screenshot 3), 1 = "Open Project" (Screenshot 4)
@@ -78,7 +82,7 @@ fun WelcomeScreen(
                     fontSize = 13.sp
                 )
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Scrollable actions list with zero duplicate elements
                 LazyColumn(
@@ -87,6 +91,39 @@ fun WelcomeScreen(
                         .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
+                    // Telegram Promotional Banner
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onOpenTelegram() },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF18222D)),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF229ED9))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF229ED9)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.Send, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("Join Official Telegram Channel", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    Text("@devcraftupdates • Compiler Updates & Templates", color = Color(0xFF38BDF8), fontSize = 11.sp)
+                                }
+                                Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color(0xFF38BDF8))
+                            }
+                        }
+                    }
+
                     // Primary Create Project Card
                     item {
                         MenuActionCard(
@@ -103,6 +140,26 @@ fun WelcomeScreen(
                             icon = Icons.Default.Folder,
                             label = "Open existing project (${projects.size})",
                             onClick = { currentViewMode = 1 }
+                        )
+                    }
+
+                    // AI Assistant Full Page Chat Card
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.AutoAwesome,
+                            label = "DevCraft AI Assistant (Full Page Chat)",
+                            customTint = Color(0xFF38BDF8),
+                            onClick = onOpenAiChat
+                        )
+                    }
+
+                    // Pre-loaded SVG Icons Pack Card
+                    item {
+                        MenuActionCard(
+                            icon = Icons.Default.Category,
+                            label = "SVG & Vector Icons Pack (100+ Icons)",
+                            customTint = IdeAccentPeach,
+                            onClick = onOpenSvgIcons
                         )
                     }
 
@@ -276,6 +333,26 @@ fun WelcomeScreen(
                             ) {
                                 Text("Create First Project", color = Color(0xFF28180E))
                             }
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth(0.9f)
+                                    .clickable { onSupportDeveloper() },
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1D24)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF87171).copy(alpha = 0.5f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Favorite, contentDescription = null, tint = Color(0xFFF87171), modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text("Support Developer", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Text("UPI: 8791738300@fam", color = Color(0xFFF87171), fontSize = 11.sp)
+                                    }
+                                }
+                            }
                         }
                     }
                 } else {
@@ -291,6 +368,28 @@ fun WelcomeScreen(
                                 onClick = { onOpenProject(project) },
                                 onDelete = { onDeleteProject(project.id) }
                             )
+                        }
+                        item {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSupportDeveloper() },
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1D24)),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF87171).copy(alpha = 0.5f))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Favorite, contentDescription = null, tint = Color(0xFFF87171), modifier = Modifier.size(20.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("Support DevCraft Developer", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        Text("UPI ID: 8791738300@fam", color = Color(0xFFF87171), fontSize = 11.sp)
+                                    }
+                                    Text("Contribute ❤️", color = Color(0xFFF87171), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                         item {
                             Spacer(modifier = Modifier.height(24.dp))

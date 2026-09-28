@@ -36,6 +36,10 @@ sealed class Screen {
     object Workspace : Screen()
     object SupportDeveloper : Screen()
     object VisualDesigner : Screen()
+    object AppRunner : Screen()
+    object AiChat : Screen()
+    object SvgIconsBrowser : Screen()
+    object ProjectLibraries : Screen()
 }
 
 enum class BottomTab {
@@ -129,6 +133,9 @@ class IdeViewModel(application: Application) : AndroidViewModel(application) {
     private val _showSketchwareDialog = MutableStateFlow(false)
     val showSketchwareDialog: StateFlow<Boolean> = _showSketchwareDialog.asStateFlow()
 
+    private val _showTelegramDialog = MutableStateFlow(false)
+    val showTelegramDialog: StateFlow<Boolean> = _showTelegramDialog.asStateFlow()
+
     // Project Creation wizard state
     private val _selectedTemplate = MutableStateFlow("Empty Activity")
     val selectedTemplate: StateFlow<String> = _selectedTemplate.asStateFlow()
@@ -195,11 +202,13 @@ class IdeViewModel(application: Application) : AndroidViewModel(application) {
             // Splash delay animation
             delay(1500)
             _currentScreen.value = Screen.Welcome
+            _showTelegramDialog.value = true // Automatically promote Telegram on opening!
         }
     }
 
     fun dismissSplash() {
         _currentScreen.value = Screen.Welcome
+        _showTelegramDialog.value = true
     }
 
     fun navigateTo(screen: Screen) {
@@ -715,6 +724,37 @@ BUILD SUCCESSFUL in 1s
     fun setShowPreferencesDialog(show: Boolean) { _showPreferencesDialog.value = show }
     fun setShowAiDialog(show: Boolean) { _showAiDialog.value = show }
     fun setShowSketchwareDialog(show: Boolean) { _showSketchwareDialog.value = show }
+    fun setShowTelegramDialog(show: Boolean) { _showTelegramDialog.value = show }
+
+    fun addDependencyToGradle(dependency: String) {
+        val proj = _activeProject.value ?: return
+        viewModelScope.launch {
+            val gradleFile = _projectFiles.value.find { it.relativePath.endsWith("build.gradle") || it.relativePath.endsWith("build.gradle.kts") }
+            if (gradleFile != null) {
+                val content = gradleFile.content
+                val updated = if (content.contains("dependencies {")) {
+                    content.replace("dependencies {", "dependencies {\n    $dependency")
+                } else {
+                    "$content\n\ndependencies {\n    $dependency\n}"
+                }
+                repository.saveFile(proj.id, gradleFile.relativePath, updated)
+                _editorCode.value = updated
+                _projectFiles.value = repository.getFiles(proj.id).firstOrNull() ?: _projectFiles.value
+                _userMessage.value = "Added library to ${gradleFile.relativePath}"
+            }
+        }
+    }
+
+    fun addIconDrawableToProject(iconName: String, xmlContent: String) {
+        val proj = _activeProject.value ?: return
+        viewModelScope.launch {
+            val path = "app/src/main/res/drawable/${iconName}.xml"
+            repository.createFile(proj.id, path, xmlContent)
+            _projectFiles.value = repository.getFiles(proj.id).firstOrNull() ?: _projectFiles.value
+            _userMessage.value = "Added $path to project!"
+        }
+    }
+
     fun toggleBottomSheet() { _isBottomSheetExpanded.value = !_isBottomSheetExpanded.value }
     fun setBottomSheetExpanded(expanded: Boolean) { _isBottomSheetExpanded.value = expanded }
     fun setActiveBottomTab(tab: BottomTab) { _activeBottomTab.value = tab }

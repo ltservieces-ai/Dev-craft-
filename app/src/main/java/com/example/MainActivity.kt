@@ -1,7 +1,9 @@
 package com.example
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -69,6 +71,7 @@ class MainActivity : ComponentActivity() {
             val showPreferencesDialog by viewModel.showPreferencesDialog.collectAsStateWithLifecycle()
             val showAiDialog by viewModel.showAiDialog.collectAsStateWithLifecycle()
             val showSketchwareDialog by viewModel.showSketchwareDialog.collectAsStateWithLifecycle()
+            val showTelegramDialog by viewModel.showTelegramDialog.collectAsStateWithLifecycle()
 
             val configName by viewModel.configName.collectAsStateWithLifecycle()
             val configPackage by viewModel.configPackage.collectAsStateWithLifecycle()
@@ -143,6 +146,9 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onCloudSync = { viewModel.setShowCloudSyncDialog(true) },
                                 onSupportDeveloper = { viewModel.navigateTo(Screen.SupportDeveloper) },
+                                onOpenTelegram = { viewModel.setShowTelegramDialog(true) },
+                                onOpenSvgIcons = { viewModel.navigateTo(Screen.SvgIconsBrowser) },
+                                onOpenAiChat = { viewModel.navigateTo(Screen.AiChat) },
                                 onDeleteProject = { viewModel.deleteProject(it) }
                             )
                         }
@@ -225,8 +231,13 @@ class MainActivity : ComponentActivity() {
                                     onOpenCloudSync = { viewModel.setShowCloudSyncDialog(true) },
                                     onOpenPreferences = { viewModel.setShowPreferencesDialog(true) },
                                     onOpenVisualDesigner = { viewModel.navigateTo(Screen.VisualDesigner) },
-                                    onOpenAiAssistant = { viewModel.setShowAiDialog(true) },
+                                    onOpenAiAssistant = { viewModel.navigateTo(Screen.AiChat) },
                                     onOpenSketchware = { viewModel.setShowSketchwareDialog(true) },
+                                    onOpenAppRunner = { viewModel.navigateTo(Screen.AppRunner) },
+                                    onOpenSvgIcons = { viewModel.navigateTo(Screen.SvgIconsBrowser) },
+                                    onOpenLibraries = { viewModel.navigateTo(Screen.ProjectLibraries) },
+                                    onOpenTelegram = { viewModel.setShowTelegramDialog(true) },
+                                    onOpenSupportDeveloper = { viewModel.navigateTo(Screen.SupportDeveloper) },
                                     onCloseProject = { viewModel.navigateTo(Screen.Welcome) }
                                 )
                             }
@@ -237,7 +248,59 @@ class MainActivity : ComponentActivity() {
                                     project = proj,
                                     onBack = { viewModel.navigateTo(Screen.Workspace) },
                                     onRunBuild = { viewModel.runBuildAndInstall(context) },
-                                    onOpenConfiguration = { viewModel.setShowSketchwareDialog(true) }
+                                    onOpenConfiguration = { viewModel.setShowSketchwareDialog(true) },
+                                    onOpenAppRunner = { viewModel.navigateTo(Screen.AppRunner) }
+                                )
+                            } ?: run {
+                                viewModel.navigateTo(Screen.Welcome)
+                            }
+                        }
+                        Screen.AppRunner -> {
+                            activeProject?.let { proj ->
+                                AppRunnerScreen(
+                                    project = proj,
+                                    onBack = { viewModel.navigateTo(Screen.Workspace) },
+                                    onInstallApk = { viewModel.promptInstallApk(context) },
+                                    onOpenSupportDeveloper = { viewModel.navigateTo(Screen.SupportDeveloper) },
+                                    onOpenTelegram = { viewModel.setShowTelegramDialog(true) }
+                                )
+                            } ?: run {
+                                viewModel.navigateTo(Screen.Welcome)
+                            }
+                        }
+                        Screen.AiChat -> {
+                            AiChatScreen(
+                                projectFiles = projectFiles,
+                                activeFile = currentFile,
+                                onBack = {
+                                    if (activeProject != null) viewModel.navigateTo(Screen.Workspace)
+                                    else viewModel.navigateTo(Screen.Welcome)
+                                },
+                                onApplyCodeToFile = { code ->
+                                    viewModel.updateEditorCode(code)
+                                    if (activeProject != null) viewModel.navigateTo(Screen.Workspace)
+                                }
+                            )
+                        }
+                        Screen.SvgIconsBrowser -> {
+                            SvgIconsBrowserScreen(
+                                onBack = {
+                                    if (activeProject != null) viewModel.navigateTo(Screen.Workspace)
+                                    else viewModel.navigateTo(Screen.Welcome)
+                                },
+                                onAddIconToProject = { name, xml ->
+                                    viewModel.addIconDrawableToProject(name, xml)
+                                }
+                            )
+                        }
+                        Screen.ProjectLibraries -> {
+                            activeProject?.let { proj ->
+                                ProjectLibrariesScreen(
+                                    project = proj,
+                                    onBack = { viewModel.navigateTo(Screen.Workspace) },
+                                    onAddDependencyToGradle = { dep ->
+                                        viewModel.addDependencyToGradle(dep)
+                                    }
                                 )
                             } ?: run {
                                 viewModel.navigateTo(Screen.Welcome)
@@ -246,6 +309,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                     // Dialog Overlays
+                    if (showTelegramDialog) {
+                        TelegramPromoDialog(
+                            onDismiss = { viewModel.setShowTelegramDialog(false) }
+                        )
+                    }
                     if (showPermissionsDialog && activeProject != null) {
                         PermissionsDashboardDialog(
                             project = activeProject!!,
