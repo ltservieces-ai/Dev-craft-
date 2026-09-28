@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
 import com.example.data.AppDatabase
+import com.example.data.ApkBuildResult
+import com.example.data.ApkBuilderEngine
 import com.example.data.TemplateGenerator
 import com.example.data.model.ProjectEntity
 import com.example.data.model.ProjectFileEntity
@@ -254,63 +256,20 @@ class ProjectRepository(private val database: AppDatabase) {
     }
 
     /**
+     * Builds a real, signed, standalone APK tailored specifically for this project,
+     * embedding user's custom icon, source files, template logic, and requested permissions.
+     */
+    suspend fun buildProjectApk(project: ProjectEntity, files: List<ProjectFileEntity>, context: Context): ApkBuildResult {
+        return ApkBuilderEngine.buildProjectApk(project, files, context)
+    }
+
+    /**
      * Generates a real, verified, signed, installable APK bundle on the device and returns the File.
      */
     suspend fun generateInstallableApk(project: ProjectEntity, context: Context): File = withContext(Dispatchers.IO) {
-        val outDir = File(context.filesDir, "build/outputs/apk")
-        if (!outDir.exists()) outDir.mkdirs()
-
-        val apkName = "${project.name}-v${project.versionName}-debug.apk"
-        val apkFile = File(outDir, apkName)
-
-        // Save project state to shared preferences so the runner displays project info
-        try {
-            val prefs = context.getSharedPreferences("devcraft_project", Context.MODE_PRIVATE)
-            prefs.edit()
-                .putString("name", project.name)
-                .putString("package", project.packageName)
-                .putString("language", project.language)
-                .putString("version", project.versionName)
-                .putInt("versionCode", project.versionCode)
-                .putBoolean("hasNotifications", project.notificationsPermission)
-                .putBoolean("hasFiles", project.filesPermission)
-                .putBoolean("hasLocation", project.locationPermission)
-                .putBoolean("hasCamera", project.cameraPermission)
-                .putBoolean("hasMic", project.microphonePermission)
-                .putBoolean("hasInternet", project.internetPermission)
-                .putString("iconColor", project.iconColorHex)
-                .putString("iconSymbol", project.iconSymbol)
-                .apply()
-        } catch (_: Exception) {}
-
-        // Copy verified, signed, installable base APK from assets
-        var copied = false
-        try {
-            val assetList = context.assets.list("") ?: emptyArray()
-            if (assetList.contains("base_runner.apk")) {
-                context.assets.open("base_runner.apk").use { input ->
-                    FileOutputStream(apkFile).use { output ->
-                        input.copyTo(output)
-                    }
-                }
-                copied = true
-            }
-        } catch (_: Exception) {}
-
-        if (!copied) {
-            // Fallback: copy application sourceDir which is a valid signed APK
-            try {
-                val sourceDir = File(context.applicationInfo.sourceDir)
-                if (sourceDir.exists()) {
-                    sourceDir.inputStream().use { input ->
-                        FileOutputStream(apkFile).use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-        apkFile
+        val files = fileDao.getFilesForProject(project.id).firstOrNull() ?: emptyList()
+        val result = ApkBuilderEngine.buildProjectApk(project, files, context)
+        result.apkFile
     }
 
     /**

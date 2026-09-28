@@ -130,31 +130,56 @@ fun AppRunnerScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = project.name,
-                                color = Color.White,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(Color(0xFF38C779).copy(alpha = 0.2f))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            ) {
-                                Text("RUNNING", color = Color(0xFF38C779), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(try {
+                                    Color(android.graphics.Color.parseColor(project.iconColorHex))
+                                } catch (_: Exception) {
+                                    Color(0xFF38C779)
+                                }),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val iconVector = when (project.iconSymbol.lowercase()) {
+                                "music" -> Icons.Default.MusicNote
+                                "game" -> Icons.Default.SportsEsports
+                                "terminal" -> Icons.Default.Terminal
+                                "rocket" -> Icons.Default.RocketLaunch
+                                "star" -> Icons.Default.Star
+                                "android" -> Icons.Default.Android
+                                else -> Icons.Default.Code
                             }
+                            Icon(iconVector, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                         }
-                        Text(
-                            text = "${project.packageName} • v${project.versionName}",
-                            color = Color(0xFFA19EAA),
-                            fontSize = 11.sp
-                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = project.name,
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Color(0xFF38C779).copy(alpha = 0.2f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text("RUNNING", color = Color(0xFF38C779), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                            Text(
+                                text = "${project.packageName} • v${project.versionName}",
+                                color = Color(0xFFA19EAA),
+                                fontSize = 11.sp
+                            )
+                        }
                     }
                 },
                 navigationIcon = {

@@ -9,6 +9,7 @@ import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.AppDatabase
+import com.example.data.ApkBuildResult
 import com.example.data.model.ProjectEntity
 import com.example.data.model.ProjectFileEntity
 import com.example.data.repository.ProjectRepository
@@ -135,6 +136,12 @@ class IdeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _showTelegramDialog = MutableStateFlow(false)
     val showTelegramDialog: StateFlow<Boolean> = _showTelegramDialog.asStateFlow()
+
+    private val _showBuildSuccessDialog = MutableStateFlow(false)
+    val showBuildSuccessDialog: StateFlow<Boolean> = _showBuildSuccessDialog.asStateFlow()
+
+    private val _lastBuildResult = MutableStateFlow<ApkBuildResult?>(null)
+    val lastBuildResult: StateFlow<ApkBuildResult?> = _lastBuildResult.asStateFlow()
 
     // Project Creation wizard state
     private val _selectedTemplate = MutableStateFlow("Empty Activity")
@@ -529,7 +536,7 @@ BUILD SUCCESSFUL in 1s
             _activeBottomTab.value = BottomTab.BUILD_OUTPUT
             _buildLogs.value = listOf("1 Starting build for ${proj.name} [${proj.language}]...")
 
-            delay(400)
+            delay(350)
             _buildLogs.value = _buildLogs.value + "2 Merging manifests and validating permissions..."
             _buildLogs.value = _buildLogs.value + "   - Notifications: ${if (proj.notificationsPermission) "ENABLED" else "DISABLED"}"
             _buildLogs.value = _buildLogs.value + "   - Storage & Files: ${if (proj.filesPermission) "ENABLED" else "DISABLED"}"
@@ -537,23 +544,33 @@ BUILD SUCCESSFUL in 1s
             _buildLogs.value = _buildLogs.value + "   - Camera & Mic: ${if (proj.cameraPermission) "ENABLED" else "DISABLED"}"
             _buildLogs.value = _buildLogs.value + "   - Internet: ENABLED"
 
-            delay(600)
-            _buildLogs.value = _buildLogs.value + "3 Compiling ${proj.language} sources with AAPT2 and D8..."
-            
-            delay(500)
-            _buildLogs.value = _buildLogs.value + "4 Signing APK with DevCraft v1 Debug Key..."
-            
-            // Generate real valid installable APK bundle on device!
-            val apkFile = repository.generateInstallableApk(proj, context)
-            _lastGeneratedApk.value = apkFile
+            delay(350)
+            _buildLogs.value = _buildLogs.value + "3 Generating custom App Icon (${proj.iconColorHex}, ${proj.iconSymbol})..."
+            _buildLogs.value = _buildLogs.value + "4 Packaging ${_projectFiles.value.size} source files & template assets..."
 
-            delay(300)
-            _buildLogs.value = _buildLogs.value + "5 BUILD SUCCESSFUL in 1.8s"
-            _buildLogs.value = _buildLogs.value + "6 Output: ${apkFile.name} (${apkFile.length() / 1024} KB)"
-            _buildLogs.value = _buildLogs.value + "7 Direct Install ready. Tap 'Install APK' below to install on device."
+            delay(400)
+            _buildLogs.value = _buildLogs.value + "5 Compiling ${proj.language} sources with AAPT2 and D8..."
+            
+            delay(350)
+            _buildLogs.value = _buildLogs.value + "6 Signing APK with DevCraft v1 Debug Key..."
+            
+            // Generate real valid installable APK bundle on device tailored to this project!
+            val buildResult = repository.buildProjectApk(proj, _projectFiles.value, context)
+            _lastBuildResult.value = buildResult
+            _lastGeneratedApk.value = buildResult.apkFile
+
+            delay(200)
+            _buildLogs.value = _buildLogs.value + "7 BUILD SUCCESSFUL in ${buildResult.buildTimeMs}ms"
+            _buildLogs.value = _buildLogs.value + "8 Output: ${buildResult.apkFile.name} (${buildResult.fileSizeBytes / 1024} KB)"
+            _buildLogs.value = _buildLogs.value + "9 SHA-256: ${buildResult.checksumSha256.take(16)}..."
+            if (buildResult.publicApkFile != null) {
+                _buildLogs.value = _buildLogs.value + "10 Saved to Downloads: ${buildResult.publicApkFile.absolutePath}"
+            }
+            _buildLogs.value = _buildLogs.value + "11 Ready to run or install on device."
 
             _isBuilding.value = false
-            _userMessage.value = "Build successful! APK ready for install."
+            _userMessage.value = "Build successful! APK created for ${proj.name}."
+            _showBuildSuccessDialog.value = true
 
             // Also log to App Logs
             _appLogs.value = _appLogs.value + "I/ActivityManager: Start proc ${proj.packageName} for activity {${proj.packageName}/.MainActivity}"
@@ -725,6 +742,7 @@ BUILD SUCCESSFUL in 1s
     fun setShowAiDialog(show: Boolean) { _showAiDialog.value = show }
     fun setShowSketchwareDialog(show: Boolean) { _showSketchwareDialog.value = show }
     fun setShowTelegramDialog(show: Boolean) { _showTelegramDialog.value = show }
+    fun setShowBuildSuccessDialog(show: Boolean) { _showBuildSuccessDialog.value = show }
 
     fun addDependencyToGradle(dependency: String) {
         val proj = _activeProject.value ?: return

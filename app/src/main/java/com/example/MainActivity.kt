@@ -72,6 +72,8 @@ class MainActivity : ComponentActivity() {
             val showAiDialog by viewModel.showAiDialog.collectAsStateWithLifecycle()
             val showSketchwareDialog by viewModel.showSketchwareDialog.collectAsStateWithLifecycle()
             val showTelegramDialog by viewModel.showTelegramDialog.collectAsStateWithLifecycle()
+            val showBuildSuccessDialog by viewModel.showBuildSuccessDialog.collectAsStateWithLifecycle()
+            val lastBuildResult by viewModel.lastBuildResult.collectAsStateWithLifecycle()
 
             val configName by viewModel.configName.collectAsStateWithLifecycle()
             val configPackage by viewModel.configPackage.collectAsStateWithLifecycle()
@@ -309,6 +311,26 @@ class MainActivity : ComponentActivity() {
                     }
 
                     // Dialog Overlays
+                    if (showBuildSuccessDialog && lastBuildResult != null && activeProject != null) {
+                        ApkBuildSuccessDialog(
+                            buildResult = lastBuildResult!!,
+                            project = activeProject!!,
+                            onDirectRun = {
+                                viewModel.setShowBuildSuccessDialog(false)
+                                viewModel.navigateTo(Screen.AppRunner)
+                            },
+                            onInstallApk = {
+                                viewModel.setShowBuildSuccessDialog(false)
+                                viewModel.promptInstallApk(context)
+                            },
+                            onShareApk = {
+                                viewModel.setShowBuildSuccessDialog(false)
+                                viewModel.shareApk(context)
+                            },
+                            onDismiss = { viewModel.setShowBuildSuccessDialog(false) }
+                        )
+                    }
+
                     if (showTelegramDialog) {
                         TelegramPromoDialog(
                             onDismiss = { viewModel.setShowTelegramDialog(false) }
